@@ -30,8 +30,8 @@ function menu_item_visibility_translated_menu_link_alter(&$item, $map) {
   global $user;
 
   if (!empty($item['access'])) {
-    // Menu administrators can see all links.
-    if (strpos(current_path(), 'admin/structure/menu/manage/' . $item['menu_name']) === 0 && user_access('administer menu')) {
+    // Menu administrators can see all links within admin paths.
+    if (user_access('administer menu') && path_is_admin(current_path())) {
       return;
     }
 
