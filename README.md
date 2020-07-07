@@ -26,7 +26,7 @@ Current Maintainers
 Credits
 -------
 
-- Ported to Backdrop CMS by [Robert Garrigos](hthttps://github.com/robertgarrigos).
+- Ported to Backdrop CMS by [Robert Garrigos](https://github.com/robertgarrigos).
 - Originally written for Drupal by [Dave Reid](https://github.com/davereid) and
  [Joel Pittet](https://github.com/joelpittet)
 
