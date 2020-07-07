@@ -37,7 +37,7 @@ function menu_item_visibility_translated_menu_link_alter(&$item, $map) {
 
     // @todo Convert this into a proper hook so modules can extend visibility.
     $item['visibility'] = menu_item_visibility_load($item['mlid']);
-    if (!empty($item['visibility']['roles']) && !array_intersect($item['visibility']['roles'], array_keys($user->roles))) {
+    if (!empty($item['visibility']['roles']) && !array_intersect($item['visibility']['roles'], $user->roles)) {
       $item['access'] = FALSE;
     }
   }
@@ -61,31 +61,31 @@ function menu_item_visibility_module_implements_alter(&$implementations, $hook) 
  * Load all visibility data for a menu link.
  */
 function menu_item_visibility_load($mlid, $reset = FALSE) {
-  // Use the advanced drupal_static() pattern, since this is called very often.
-  static $drupal_static_fast;
+  // Use the advanced backdrop_static() pattern, since this is called very often.
+  static $backdrop_static_fast;
 
-  if (!isset($drupal_static_fast)) {
-    $drupal_static_fast['visibilities'] = &drupal_static(__FUNCTION__);
+  if (!isset($backdrop_static_fast)) {
+    $backdrop_static_fast['visibilities'] = &backdrop_static(__FUNCTION__);
   }
 
-  $visibilities = &$drupal_static_fast['visibilities'];
+  $visibilities = &$backdrop_static_fast['visibilities'];
 
   // If we haven't stored them all in the static build them from the database.
   if (!isset($visibilities) || $reset) {
     // Select all menu link ids and their role ids.
     $result = db_select('menu_links_visibility_role', 'r')
-      ->fields('r', array('mlid', 'rid'))
+      ->fields('r', ['mlid', 'role'])
       ->execute()
       ->fetchAll(PDO::FETCH_ASSOC);
 
-    $visibilities = array();
+    $visibilities = [];
     foreach ($result as $record) {
-      $visibilities[$record['mlid']][] = $record['rid'];
+      $visibilities[$record['mlid']][] = $record['role'];
     }
   }
-  $visibility['roles'] = !empty($visibilities[$mlid]) ? $visibilities[$mlid] : array();
+  $visibility['roles'] = !empty($visibilities[$mlid]) ? $visibilities[$mlid] : [];
   if (!empty($mlid)) {
-    drupal_alter('menu_item_visibility_load', $visibility, $mlid);
+    backdrop_alter('menu_item_visibility_load', $visibility, $mlid);
   }
 
   return $visibility;
@@ -97,9 +97,9 @@ function menu_item_visibility_load($mlid, $reset = FALSE) {
 function menu_item_visibility_menu_link_insert($link) {
   if (!empty($link['roles']) && $roles = array_filter($link['roles'])) {
     $query = db_insert('menu_links_visibility_role');
-    $query->fields(array('mlid', 'rid'));
-    foreach ($roles as $rid) {
-      $query->values(array('mlid' => $link['mlid'], 'rid' => $rid));
+    $query->fields(['mlid', 'role']);
+    foreach ($roles as $role) {
+      $query->values(['mlid' => $link['mlid'], 'role' => $role]);
     }
     $query->execute();
   }
@@ -136,7 +136,7 @@ function menu_item_visibility_menu_link_delete($link) {
  */
 function menu_item_visibility_user_role_delete($role) {
   db_delete('menu_links_visibility_role')
-    ->condition('rid', $role->rid)
+    ->condition('role', $role->role)
     ->execute();
 }
 
@@ -144,36 +144,30 @@ function menu_item_visibility_user_role_delete($role) {
  * Implements hook_form_FORM_ID_alter().
  */
 function menu_item_visibility_form_menu_edit_item_alter(&$form, &$form_state) {
-  // Visibility settings.
-  $form['visibility_title'] = array(
-    '#type' => 'item',
-    '#title' => t('Visibility settings'),
-  );
-  $form['visibility'] = array(
-    '#type' => 'vertical_tabs',
-    '#attached' => array(
-      'js' => array(
-        'vertical-tabs' => drupal_get_path('module', 'menu_item_visibility') . '/menu_item_visibility.js',
-      ),
-    ),
-  );
-
   $visibility = menu_item_visibility_load($form['mlid']['#value'], TRUE);
 
+  $form['visibility'] = [
+    '#type' => 'fieldset',
+    '#title' => t('Visibility settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => empty($visibility['roles']),
+
+  ];
+
   // Per-role visibility.
-  $form['visibility']['role'] = array(
+  $form['visibility']['role'] = [
     '#type' => 'fieldset',
     '#title' => t('Roles'),
     '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
+    '#collapsed' => FALSE,
     '#group' => 'visibility',
     '#weight' => 10,
-  );
-  $form['visibility']['role']['roles'] = array(
+  ];
+  $form['visibility']['role']['roles'] = [
     '#type' => 'checkboxes',
     '#title' => t('Show menu link for specific roles'),
-    '#default_value' => isset($visibility['roles']) ? $visibility['roles'] : array(),
+    '#default_value' => isset($visibility['roles']) ? $visibility['roles'] : [],
     '#options' => array_map('check_plain', user_roles()),
     '#description' => t('Show this menu link only for the selected role(s). If you select no roles, the menu link will be visible to all users.'),
-  );
+  ];
 }

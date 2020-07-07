@@ -1,5 +1,6 @@
 name = Menu item visibility
 description = Allows contexts to be set for menu items, similar to block visibility.
-core = 7.x
+package = "Access Control"
+backdrop = 1.x
+type = module
 dependencies[] = menu
-conflicts[] = menu_per_role

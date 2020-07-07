@@ -9,36 +9,87 @@
  * Implements hook_schema().
  */
 function menu_item_visibility_schema() {
-  $schema['menu_links_visibility_role'] = array(
-    'fields' => array(
-      'mlid' => array(
+  $schema['menu_links_visibility_role'] = [
+    'fields' => [
+      'mlid' => [
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'description' => "The menu link's ID from {menu_links}.mlid.",
-      ),
-      'rid' => array(
-        'type' => 'int',
-        'unsigned' => TRUE,
+      ],
+      'role' => [
+        'type' => 'varchar',
+        'length' => 64,
+        'description' => 'Primary Key: The name of the role.',
         'not null' => TRUE,
-        'description' => "The user's role ID from {users_roles}.rid.",
-      ),
-    ),
-    'primary key' => array('mlid', 'rid'),
-    'indexes' => array(
-      'rid' => array('rid'),
-    ),
-    'foreign keys' => array(
-      'menu_links' => array(
+        'default' => '',
+      ],
+    ],
+    'primary key' => ['mlid', 'role'],
+    'indexes' => [
+      'role' => ['role'],
+    ],
+    'foreign keys' => [
+      'menu_links' => [
         'table' => 'menu_links',
-        'columns' => array('mlid' => 'mlid'),
-      ),
-      'role' => array(
+        'columns' => ['mlid' => 'mlid'],
+      ],
+      'role' => [
         'table' => 'role',
-        'columns' => array('rid' => 'rid'),
-      ),
-    ),
-  );
+        'columns' => ['role' => 'role'],
+      ],
+    ],
+  ];
 
   return $schema;
+}
+
+/**
+ * Update role ids to role names.
+ */
+function menu_item_visibility_update_1000() {
+
+  // Update role ID to be a varchar instead of an integer.
+  if (db_field_exists('menu_links_visibility_role', 'rid')) {
+    db_drop_primary_key('menu_links_visibility_role');
+    db_drop_index('menu_links_visibility_role', 'rid');
+
+    $role_column = [
+      'type' => 'varchar',
+      'length' => 64,
+      'description' => 'Primary Key: The name of the role.',
+      'not null' => TRUE,
+      'default' => '',
+    ];
+    db_change_field('menu_links_visibility_role', 'rid', 'role', $role_column);
+
+    db_add_primary_key('menu_links_visibility_role', ['mlid', 'role']);
+    db_add_index('menu_links_visibility_role', 'role', ['role']);
+  }
+
+  // Update the menu_links_visibility_role table to match the new role names.
+  $result = db_query('SELECT * FROM {menu_links_visibility_role}');
+  foreach ($result as $row) {
+    switch ($row->role) {
+      case '1':
+        $role = 'anonymous';
+      break;
+      case '2':
+        $role = 'authenticated';
+      break;
+      case '3':
+        $role = 'administrator';
+      break;
+      db_update('menu_links_visibility_role')
+      ->fields([
+        'role' => $role,
+      ])
+      ->condition('role', $row->role)
+      ->execute();
+
+      default:
+        // TODO: what happens with custom roles?? we don't have their original relation rid->role name...
+        break;
+    }
+  }
 }
