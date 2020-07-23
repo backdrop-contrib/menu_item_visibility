@@ -9,37 +9,37 @@
  * Implements hook_schema().
  */
 function menu_item_visibility_schema() {
-  $schema['menu_links_visibility_role'] = [
-    'fields' => [
-      'mlid' => [
+  $schema['menu_links_visibility_role'] = array(
+    'fields' => array(
+      'mlid' => array(
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'description' => "The menu link's ID from {menu_links}.mlid.",
-      ],
-      'role' => [
+      ),
+      'role' => array(
         'type' => 'varchar',
         'length' => 64,
         'description' => 'Primary Key: The name of the role.',
         'not null' => TRUE,
         'default' => '',
-      ],
-    ],
-    'primary key' => ['mlid', 'role'],
-    'indexes' => [
-      'role' => ['role'],
-    ],
-    'foreign keys' => [
-      'menu_links' => [
+      ),
+    ),
+    'primary key' => array('mlid', 'role'),
+    'indexes' => array(
+      'role' => array('role'),
+    ),
+    'foreign keys' => array(
+      'menu_links' => array(
         'table' => 'menu_links',
-        'columns' => ['mlid' => 'mlid'],
-      ],
-      'role' => [
+        'columns' => array('mlid' => 'mlid'),
+      ),
+      'role' => array(
         'table' => 'role',
-        'columns' => ['role' => 'role'],
-      ],
-    ],
-  ];
+        'columns' => array('role' => 'role'),
+      ),
+    ),
+  );
 
   return $schema;
 }
@@ -54,17 +54,17 @@ function menu_item_visibility_update_1000() {
     db_drop_primary_key('menu_links_visibility_role');
     db_drop_index('menu_links_visibility_role', 'rid');
 
-    $role_column = [
+    $role_column = array(
       'type' => 'varchar',
       'length' => 64,
       'description' => 'Primary Key: The name of the role.',
       'not null' => TRUE,
       'default' => '',
-    ];
+    );
     db_change_field('menu_links_visibility_role', 'rid', 'role', $role_column);
 
-    db_add_primary_key('menu_links_visibility_role', ['mlid', 'role']);
-    db_add_index('menu_links_visibility_role', 'role', ['role']);
+    db_add_primary_key('menu_links_visibility_role', array('mlid', 'role'));
+    db_add_index('menu_links_visibility_role', 'role', array('role'));
   }
 
   // Update the menu_links_visibility_role table to match the new role names.
@@ -81,9 +81,9 @@ function menu_item_visibility_update_1000() {
         $role = 'administrator';
       break;
       db_update('menu_links_visibility_role')
-      ->fields([
+      ->fields(array(
         'role' => $role,
-      ])
+      ))
       ->condition('role', $row->role)
       ->execute();
 
