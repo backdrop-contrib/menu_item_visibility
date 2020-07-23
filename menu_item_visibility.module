@@ -74,16 +74,16 @@ function menu_item_visibility_load($mlid, $reset = FALSE) {
   if (!isset($visibilities) || $reset) {
     // Select all menu link ids and their role ids.
     $result = db_select('menu_links_visibility_role', 'r')
-      ->fields('r', ['mlid', 'role'])
+      ->fields('r', array('mlid', 'role'))
       ->execute()
       ->fetchAll(PDO::FETCH_ASSOC);
 
-    $visibilities = [];
+    $visibilities = array();
     foreach ($result as $record) {
       $visibilities[$record['mlid']][] = $record['role'];
     }
   }
-  $visibility['roles'] = !empty($visibilities[$mlid]) ? $visibilities[$mlid] : [];
+  $visibility['roles'] = !empty($visibilities[$mlid]) ? $visibilities[$mlid] : array();
   if (!empty($mlid)) {
     backdrop_alter('menu_item_visibility_load', $visibility, $mlid);
   }
@@ -97,9 +97,9 @@ function menu_item_visibility_load($mlid, $reset = FALSE) {
 function menu_item_visibility_menu_link_insert($link) {
   if (!empty($link['roles']) && $roles = array_filter($link['roles'])) {
     $query = db_insert('menu_links_visibility_role');
-    $query->fields(['mlid', 'role']);
+    $query->fields(array('mlid', 'role'));
     foreach ($roles as $role) {
-      $query->values(['mlid' => $link['mlid'], 'role' => $role]);
+      $query->values(array('mlid' => $link['mlid'], 'role' => $role));
     }
     $query->execute();
   }
@@ -146,28 +146,28 @@ function menu_item_visibility_user_role_delete($role) {
 function menu_item_visibility_form_menu_edit_item_alter(&$form, &$form_state) {
   $visibility = menu_item_visibility_load($form['mlid']['#value'], TRUE);
 
-  $form['visibility'] = [
+  $form['visibility'] = array(
     '#type' => 'fieldset',
     '#title' => t('Visibility settings'),
     '#collapsible' => TRUE,
     '#collapsed' => empty($visibility['roles']),
 
-  ];
+  );
 
   // Per-role visibility.
-  $form['visibility']['role'] = [
+  $form['visibility']['role'] = array(
     '#type' => 'fieldset',
     '#title' => t('Roles'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
     '#group' => 'visibility',
     '#weight' => 10,
-  ];
-  $form['visibility']['role']['roles'] = [
+  );
+  $form['visibility']['role']['roles'] = array(
     '#type' => 'checkboxes',
     '#title' => t('Show menu link for specific roles'),
-    '#default_value' => isset($visibility['roles']) ? $visibility['roles'] : [],
+    '#default_value' => isset($visibility['roles']) ? $visibility['roles'] : array(),
     '#options' => array_map('check_plain', user_roles()),
     '#description' => t('Show this menu link only for the selected role(s). If you select no roles, the menu link will be visible to all users.'),
-  ];
+  );
 }
