@@ -89,6 +89,7 @@ function menu_item_visibility_update_1000() {
 
       default:
         // TODO: what happens with custom roles?? we don't have their original relation rid->role name...
+        // check this out: https://github.com/backdrop/backdrop-issues/issues/2842#issuecomment-332468932
         break;
     }
   }
